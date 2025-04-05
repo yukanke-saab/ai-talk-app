@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQLデータベース
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aitalk
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d aitalk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # モックサーバー - 外部APIをシミュレート
+  mockserver:
+    build:
+      context: ./docker/local/mockserver
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+    volumes:
+      - ./docker/local/mockserver:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # バックエンドAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/local/backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_CONNECTION: postgresql://user:password@postgres:5432/aitalk
+      DATABASE_URL: postgresql://user:password@postgres:5432/aitalk
+      OPENAI_API_URL: http://mockserver:8080/openai
+      WHISPER_API_URL: http://mockserver:8080/whisper
+      VOICEVOX_API_URL: http://mockserver:8080/voicevox
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - mockserver
+
+  # Adminer - データベース管理ツール
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:

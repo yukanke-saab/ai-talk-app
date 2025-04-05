@@ -24,9 +24,10 @@
         *   複数の人格を用意する。
         *   各人格ごとに会話内容を記録しておく。
     *   **API:**
-        *   OpenAI API (ChatGPT)
-        *   Whisper API (音声テキスト変換)
-        *   VOICEVOX (テキスト音声変換)
+        *   OpenAI API (ChatGPT) - AIチャット
+        *   OpenAI API (GPT-4o-transcribe) - 音声テキスト変換
+        *   OpenAI API (TTS) - テキスト音声変換
+        *   （代替オプション）VOICEVOX - 日本語特化のテキスト音声変換
 *   **3.2 AIからの着信機能**
     *   **機能概要:** AIからユーザーに着信がある機能。
     *   **動作:**
@@ -71,18 +72,20 @@
 
 **5. API仕様**
 
-*   **5.1 OpenAI API**
-    *   APIエンドポイント: (未定)
-    *   リクエストパラメータ: (未定)
-    *   レスポンスパラメータ: (未定)
-*   **5.2 Whisper API**
-    *   APIエンドポイント: (未定)
-    *   リクエストパラメータ: (未定)
-    *   レスポンスパラメータ: (未定)
-*   **5.3 VOICEVOX**
-    *   APIエンドポイント: (未定)
-    *   リクエストパラメータ: (未定)
-    *   レスポンスパラメータ: (未定)
+*   **5.1 OpenAI API (チャット、音声認識、音声合成)**
+    *   **チャット API:**
+        *   エンドポイント: https://api.openai.com/v1/chat/completions
+        *   モデル: GPT-4o
+    *   **音声認識 API:**
+        *   エンドポイント: https://api.openai.com/v1/audio/transcriptions
+        *   モデル: GPT-4o-transcribe
+    *   **音声合成 API:**
+        *   エンドポイント: https://api.openai.com/v1/audio/speech
+        *   モデル: TTS-1 または TTS-1-HD
+*   **5.2 VOICEVOX (代替オプション)**
+    *   エンドポイント: (セルフホスト/公式API)
+    *   音声合成の日本語特化モデル
+    *   カスタマイズ可能な音声キャラクター
 
 **6. その他**
 

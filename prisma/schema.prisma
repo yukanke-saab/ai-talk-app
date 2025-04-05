@@ -1,0 +1,60 @@
+// This is a Prisma schema file for AI Talk App database
+// Visit https://pris.ly/d/prisma-schema for more information
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int           @id @default(autoincrement())
+  email              String        @unique
+  password           String
+  billingInformation String?
+  conversations      Conversation[]
+  billings           Billing[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model AI {
+  id            Int           @id @default(autoincrement())
+  name          String
+  personality   String
+  conversations Conversation[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Conversation {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  aiId      Int
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+  ai        AI        @relation(fields: [aiId], references: [id])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  content        String
+  sender         String       // "user" or "ai"
+  timestamp      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+}
+
+model Billing {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  paymentMethod String
+  billingDate   DateTime @default(now())
+  amount        Float
+  user         User     @relation(fields: [userId], references: [id])
+}
