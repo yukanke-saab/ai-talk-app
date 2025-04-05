@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2016", // または "ES2020" など、Node.jsのバージョンに合わせて
+    "module": "CommonJS",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true // JSONファイルのインポートを許可
+  },
+  "include": ["src/**/*"], // コンパイル対象のファイル
+  "exclude": ["node_modules", "**/*.spec.ts"] // コンパイル除外対象
+}

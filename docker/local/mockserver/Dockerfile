@@ -9,7 +9,7 @@ RUN apk add --no-cache git
 COPY package*.json ./
 
 # 依存関係のインストール
-RUN npm ci
+RUN npm install
 
 # ソースコードのコピー
 COPY . .

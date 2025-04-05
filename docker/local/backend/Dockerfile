@@ -9,10 +9,10 @@ RUN apk add --no-cache git
 COPY package*.json ./
 
 # 依存関係のインストール
-RUN npm ci
+RUN npm install
 
 # TypeScript設定のコピー
-COPY tsconfig.json ./
+# COPY tsconfig.json ./ # backendディレクトリにtsconfig.jsonが存在しないためコメントアウト
 
 # 開発モードで起動
 CMD ["npm", "run", "dev"]

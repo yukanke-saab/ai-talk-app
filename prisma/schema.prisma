@@ -11,50 +11,86 @@ datasource db {
 }
 
 model User {
-  id                 Int           @id @default(autoincrement())
-  email              String        @unique
-  password           String
-  billingInformation String?
-  conversations      Conversation[]
-  billings           Billing[]
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-}
-
-model AI {
   id            Int           @id @default(autoincrement())
-  name          String
-  personality   String
-  conversations Conversation[]
+  email         String        @unique
+  password      String
+  pushToken     String?       // Expo Push Token
+  callSessions  CallSession[]
+  subscriptions Subscription[]
+  usages        Usage[]
+  billings      Billing[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
 
-model Conversation {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  aiId      Int
-  messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id])
-  ai        AI        @relation(fields: [aiId], references: [id])
+model AI {
+  id           Int           @id @default(autoincrement())
+  name         String
+  personality  String?       // AIの性格設定など
+  callSessions CallSession[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
-model Message {
-  id             Int          @id @default(autoincrement())
-  conversationId Int
-  content        String
-  sender         String       // "user" or "ai"
-  timestamp      DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+model CallSession {
+  id                  Int                   @id @default(autoincrement())
+  userId              Int
+  aiId                Int
+  startTime           DateTime              @default(now())
+  endTime             DateTime?
+  conversationHistory ConversationHistory[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  user                User                  @relation(fields: [userId], references: [id])
+  ai                  AI                    @relation(fields: [aiId], references: [id])
+  usage               Usage?                // 通話時間などを記録するUsageと紐づく場合
+}
+
+model ConversationHistory {
+  id            Int         @id @default(autoincrement())
+  callSessionId Int
+  sender        String      // "user" or "ai"
+  message       String      @db.Text // 長いメッセージを考慮
+  timestamp     DateTime    @default(now())
+  callSession   CallSession @relation(fields: [callSessionId], references: [id])
+}
+
+model Subscription {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique // ユーザーごとに1つのサブスクリプション
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  plan                 String   // 例: "monthly", "yearly"
+  status               String   // 例: "active", "canceled", "past_due"
+  currentPeriodEnd     DateTime? // サブスクリプション期間の終了日時
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+}
+
+model Usage {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  callSessionId Int?        @unique // どの通話セッションの利用量か
+  callDuration Int         // 通話時間（秒など）
+  date         DateTime    @default(now()) @db.Date // 利用日
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation(fields: [userId], references: [id])
+  callSession  CallSession? @relation(fields: [callSessionId], references: [id])
+
+  @@index([userId, date])
 }
 
 model Billing {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  paymentMethod String
-  billingDate   DateTime @default(now())
-  amount        Float
-  user         User     @relation(fields: [userId], references: [id])
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  stripeChargeId String?  // Stripeの支払いIDなど
+  amount         Float
+  currency       String   // 例: "jpy"
+  status         String   // 例: "succeeded", "failed"
+  billingDate    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
 }
