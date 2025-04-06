@@ -10,25 +10,25 @@ const TTS_API_URL = Constants.expoConfig?.extra?.ttsApiUrl || 'http://localhost:
 const chatApi = axios.create({
   baseURL: OPENAI_API_URL,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
 // 音声認識APIクライアント
 const transcribeApi = axios.create({
   baseURL: TRANSCRIBE_API_URL,
   headers: {
-    'Content-Type': 'multipart/form-data',
-  },
+    'Content-Type': 'multipart/form-data'
+  }
 });
 
 // 音声合成APIクライアント
 const ttsApi = axios.create({
   baseURL: TTS_API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
-  responseType: 'arraybuffer', // 音声データをバイナリで受け取る
+  responseType: 'arraybuffer' // 音声データをバイナリで受け取る
 });
 
 /**
@@ -40,7 +40,7 @@ export const sendChatMessage = async (messages: any[]) => {
   try {
     const response = await chatApi.post('/chat/completions', {
       model: 'gpt-4o',
-      messages,
+      messages
     });
     return response.data;
   } catch (error) {
@@ -59,7 +59,7 @@ export const transcribeAudio = async (audioFile: any) => {
     const formData = new FormData();
     formData.append('file', audioFile);
     formData.append('model', 'gpt-4o-transcribe');
-    
+
     const response = await transcribeApi.post('', formData);
     return response.data;
   } catch (error) {
@@ -79,7 +79,7 @@ export const synthesizeSpeech = async (text: string, voice: string = 'alloy') =>
     const response = await ttsApi.post('', {
       input: text,
       voice,
-      model: 'tts-1',
+      model: 'tts-1'
     });
     return response.data;
   } catch (error) {
