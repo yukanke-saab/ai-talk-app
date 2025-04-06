@@ -16,4 +16,5 @@ export type MainStackParamList = {
   Home: undefined;
   Call: { aiId?: string };
   Profile: undefined;
+  IncomingCall: { aiId: string; aiName: string };
 };
