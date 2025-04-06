@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppSelector } from '../store/hooks';
 
 // ナビゲーターをインポート
 import AuthNavigator from './AuthNavigator';
@@ -13,35 +13,14 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 /**
  * ルートナビゲーション
+ * Reduxの認証状態に基づいてナビゲーションを切り替える
  * @returns {JSX.Element} ナビゲーション要素
  */
 export default function RootNavigator(): JSX.Element {
-  const [isLoading, setIsLoading] = useState(true);
-  const [userToken, setUserToken] = useState<string | null>(null);
+  // Redux認証状態を取得
+  const { isAuthenticated, loading, token } = useAppSelector(state => state.auth);
 
-  // アプリ起動時にトークンをチェック
-  useEffect(() => {
-    const bootstrapAsync = async () => {
-      let token = null;
-      
-      try {
-        // AsyncStorageからトークンを取得
-        token = await AsyncStorage.getItem('userToken');
-        
-        // TODO: トークンの有効性を検証する (バックエンドAPIとの連携) - Issue #4で実装予定
-      } catch (e) {
-        console.error('Failed to load token', e);
-      }
-      
-      // トークンの有無で認証状態を更新
-      setUserToken(token);
-      setIsLoading(false);
-    };
-
-    bootstrapAsync();
-  }, []);
-
-  if (isLoading) {
+  if (loading) {
     // 読み込み中の表示
     return (
       <View style={styles.loadingContainer}>
@@ -53,7 +32,7 @@ export default function RootNavigator(): JSX.Element {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {userToken ? (
+        {isAuthenticated ? (
           // 認証済みの場合はメイン画面
           <Stack.Screen name="Main" component={MainNavigator} />
         ) : (

@@ -1,32 +1,51 @@
-import React from 'react';
-import { StyleSheet, Text, View, Button, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, Button, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MainStackParamList } from '../navigation/types';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchUserProfile, logoutUser, clearError } from '../store/slices/authSlice';
+
+type ProfileScreenNavigationProp = StackNavigationProp<MainStackParamList, 'Profile'>;
 
 /**
  * プロフィール画面コンポーネント
  * @returns {JSX.Element} プロフィール画面要素
  */
 export default function ProfileScreen(): JSX.Element {
-  const navigation = useNavigation();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const dispatch = useAppDispatch();
+  
+  // Reduxステートから情報を取得
+  const { user, loading, error } = useAppSelector(state => state.auth);
+  
+  // プロフィール情報をロード
+  useEffect(() => {
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
+  // エラーハンドリング
+  useEffect(() => {
+    if (error) {
+      Alert.alert('エラー', error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   // ログアウト処理
-  const handleLogout = async () => {
-    try {
-      // トークンを削除
-      await AsyncStorage.removeItem('userToken');
-      
-      // ログイン画面に戻る
-      // @ts-ignore: 型エラーを一時的に無視
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-      Alert.alert('エラー', 'ログアウト処理中にエラーが発生しました。');
-    }
+  const handleLogout = () => {
+    dispatch(logoutUser());
   };
+  
+  // ローディング表示
+  if (loading && !user) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>読み込み中...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -60,6 +79,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,

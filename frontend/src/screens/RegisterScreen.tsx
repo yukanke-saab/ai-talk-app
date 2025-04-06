@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import api from '../services/api';
 import { AuthStackParamList } from '../navigation/types';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { registerUser, clearError } from '../store/slices/authSlice';
 
 type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -13,10 +14,23 @@ type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Reg
  */
 export default function RegisterScreen(): JSX.Element {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
-  const [email, setEmail] = useState(''); // React.useState を useState に変更
-  const [password, setPassword] = useState(''); // React.useState を useState に変更
-  const [confirmPassword, setConfirmPassword] = useState(''); // React.useState を useState に変更
-  const [isLoading, setIsLoading] = useState(false); // ローディング状態を追加
+  const dispatch = useAppDispatch();
+  
+  // Reduxステート
+  const { loading, error } = useAppSelector(state => state.auth);
+  
+  // ローカルステート
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // エラーメッセージの表示
+  useEffect(() => {
+    if (error) {
+      Alert.alert('登録エラー', error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -27,22 +41,20 @@ export default function RegisterScreen(): JSX.Element {
       Alert.alert('エラー', 'パスワードが一致しません。');
       return;
     }
-    setIsLoading(true);
-    try {
-      await api.post('/auth/register', { email, password });
-      Alert.alert(
-        '成功', 
-        'ユーザー登録が完了しました。ログインしてください。',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
-
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      const message = error.response?.data?.message || '登録中にエラーが発生しました。';
-      Alert.alert('登録エラー', message);
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Reduxアクションで登録処理
+    dispatch(registerUser({ email, password }))
+      .unwrap()
+      .then(() => {
+        Alert.alert(
+          '成功', 
+          'ユーザー登録が完了しました。ログインしてください。',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      })
+      .catch(() => {
+        // エラーはuseEffectでハンドリング
+      });
   };
 
   return (
@@ -70,7 +82,7 @@ export default function RegisterScreen(): JSX.Element {
         onChangeText={setConfirmPassword}
         secureTextEntry
       />
-      <Button title="登録" onPress={handleRegister} disabled={isLoading} />
+      <Button title="登録" onPress={handleRegister} disabled={loading} />
       
       <View style={styles.loginContainer}>
         <Text style={styles.loginText}>既にアカウントをお持ちの方は</Text>
