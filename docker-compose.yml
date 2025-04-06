@@ -12,12 +12,16 @@ services:
       POSTGRES_DB: aitalk
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # 初期化スクリプトディレクトリをマウント（任意）
+      - ./docker/local/postgres/init:/docker-entrypoint-initdb.d
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d aitalk"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - aitalk-network
 
   # モックサーバー - 外部APIをシミュレート
   mockserver:
@@ -32,9 +36,14 @@ services:
     volumes:
       - ./docker/local/mockserver:/app
       - /app/node_modules
+      # uploads ディレクトリを作成して共有
+      - uploads:/app/uploads
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - aitalk-network
 
   # バックエンドAPI
   backend:
@@ -46,18 +55,44 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
+      LOG_LEVEL: debug
+      # データベース設定
       DB_CONNECTION: postgresql://user:password@postgres:5432/aitalk
       DATABASE_URL: postgresql://user:password@postgres:5432/aitalk
+      # モックサーバー URL
       OPENAI_API_URL: http://mockserver:8080/openai
+      OPENAI_API_KEY: mock_key_for_development
       TRANSCRIBE_API_URL: http://mockserver:8080/transcribe
       TTS_API_URL: http://mockserver:8080/tts
+      # JWT設定
+      JWT_SECRET: local_dev_jwt_secret
+      JWT_EXPIRES_IN: 7d
+      # Expo通知設定 (開発環境ではダミー値で良い)
+      EXPO_ACCESS_TOKEN: dummy_token_for_local_dev
+      EXPO_PROJECT_ID: dummy_project_id
+      # 通話設定
+      CALL_INTERVAL_MIN: 60000  # 開発用に短く設定 (1分)
+      CALL_INTERVAL_MAX: 300000  # 開発用に短く設定 (5分)
+      CALL_HOURS_START: 0
+      CALL_HOURS_END: 23
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - uploads:/app/uploads
     restart: unless-stopped
     depends_on:
-      - postgres
-      - mockserver
+      postgres:
+        condition: service_healthy
+      mockserver:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aitalk-network
 
   # Adminer - データベース管理ツール
   adminer:
@@ -68,7 +103,18 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: postgres
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - aitalk-network
 
 volumes:
   postgres-data:
+  uploads:
+    # アップロードファイルはコンテナ間で共有する必要がある
+    name: ai-talk-uploads
+
+networks:
+  aitalk-network:
+    name: aitalk-network
+    driver: bridge
