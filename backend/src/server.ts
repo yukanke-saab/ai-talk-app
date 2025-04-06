@@ -1,9 +1,15 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import cors from 'cors';
+import helmet from 'helmet';
 import authRoutes from './routes/authRoutes'; // 認証ルートのインポート
 import testRoutes from './routes/testRoutes'; // テストルートのインポート
+// 実装済みの場合にのみインポート
+// import callRoutes from './routes/callRoutes'; // 通話ルートのインポート
 import { initCallScheduler } from './services/callSchedulerService'; // 着信スケジューラーをインポート
+import logger from './utils/logger'; // ロガー
+import { errorHandler, notFoundHandler } from './middleware/errorMiddleware'; // エラーハンドリング
 
 // .envファイルから環境変数を読み込む
 // プロジェクトルートの.envを参照するため、パスを調整
@@ -13,8 +19,23 @@ const prisma = new PrismaClient();
 const app: Express = express();
 const port = process.env.PORT || 3000;
 
+// セキュリティミドルウェア
+app.use(helmet());
+
+// CORSの設定
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*', // フロントエンドのオリジン
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+
 // JSONリクエストボディをパースするためのミドルウェア
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // 大きいリクエストボディの対応
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// リクエストロギングミドルウェア
+app.use(logger.logRequest);
 
 // ルートエンドポイント (テスト用)
 app.get('/', (req: Request, res: Response) => {
@@ -31,13 +52,16 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // TODO: 通話ルートのマウント (Issue #11)
-// TODO: 課金ルートのマウント (Issue #12)
+// app.use('/api/call', callRoutes);
 
-// TODO: グローバルエラーハンドリングミドルウェア (Issue #15)
-// app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-//   console.error(err.stack);
-//   res.status(500).send('Something broke!');
-// });
+// TODO: 課金ルートのマウント (Issue #12)
+// app.use('/api/billing', billingRoutes);
+
+// 404エラーハンドリング - 存在しないルートへのアクセス
+app.use(notFoundHandler);
+
+// グローバルエラーハンドリングミドルウェア (すべてのエラーを捕捉)
+app.use(errorHandler);
 
 async function main() {
   // Prisma Clientの接続 (任意だが、接続確認に役立つ)
