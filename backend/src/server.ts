@@ -1,7 +1,9 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import authRoutes from './routes/authRoutes'; // インポートを追加
+import authRoutes from './routes/authRoutes'; // 認証ルートのインポート
+import testRoutes from './routes/testRoutes'; // テストルートのインポート
+import { initCallScheduler } from './services/callSchedulerService'; // 着信スケジューラーをインポート
 
 // .envファイルから環境変数を読み込む
 // プロジェクトルートの.envを参照するため、パスを調整
@@ -20,7 +22,13 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // 認証ルートのマウント
-app.use('/api/auth', authRoutes); // マウント処理を追加
+app.use('/api/auth', authRoutes);
+
+// テストルートのマウント（開発環境のみ）
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/test', testRoutes);
+  console.log('Test routes enabled (development only)');
+}
 
 // TODO: 通話ルートのマウント (Issue #11)
 // TODO: 課金ルートのマウント (Issue #12)
@@ -40,6 +48,10 @@ async function main() {
     console.error('Failed to connect to the database', error);
     process.exit(1); // 接続失敗時はプロセス終了
   }
+
+  // AI着信スケジューラーを初期化（開発環境でも起動しておく）
+  const scheduler = initCallScheduler();
+  console.log('AI Call Scheduler initialized');
 
   app.listen(port, () => {
     console.log(`[server]: Server is running at http://localhost:${port}`);

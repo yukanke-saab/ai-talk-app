@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { savePushToken } from '../services/notificationService';
+import { registerUserForCalls } from '../services/callSchedulerService';
 
 const prisma = new PrismaClient();
 // JWTシークレットは環境変数から取得するのが望ましい
@@ -46,6 +48,42 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Internal server error during registration' }); // return を削除
+  }
+};
+
+/**
+ * プッシュ通知トークンの更新
+ * @param req AuthenticatedRequest
+ * @param res Response
+ */
+export const updatePushToken = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const { pushToken } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  if (!pushToken) {
+    res.status(400).json({ message: 'Push token is required' });
+    return;
+  }
+
+  try {
+    // プッシュトークンを保存
+    await savePushToken(userId, pushToken);
+    
+    // ユーザーを着信スケジューラに登録
+    registerUserForCalls(userId);
+    
+    res.status(200).json({ success: true, message: 'Push token updated successfully' });
+  } catch (error: any) {
+    console.error('Push token update error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update push token', 
+      error: error.message 
+    });
   }
 };
 
