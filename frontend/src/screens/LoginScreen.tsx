@@ -1,13 +1,19 @@
-import React, { useState } from 'react'; // useState をインポート
-import { StyleSheet, Text, View, TextInput, Button, Alert } from 'react-native'; // Alert をインポート
-import api from '../services/api'; // 作成したapiサービスをインポート
-import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage をインポート
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import api from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthStackParamList } from '../navigation/types';
+
+type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 /**
  * ログイン画面コンポーネント
  * @returns {JSX.Element} ログイン画面要素
  */
 export default function LoginScreen(): JSX.Element {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const [email, setEmail] = useState(''); // React.useState を useState に変更
   const [password, setPassword] = useState(''); // React.useState を useState に変更
   const [isLoading, setIsLoading] = useState(false); // ローディング状態を追加
@@ -57,7 +63,13 @@ export default function LoginScreen(): JSX.Element {
         secureTextEntry
       />
       <Button title="ログイン" onPress={handleLogin} disabled={isLoading} />
-      {/* TODO: 新規登録画面への遷移ボタン (Issue #7) */}
+      
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>アカウントをお持ちでない方は</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={styles.registerLink}>新規登録</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -80,5 +92,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     paddingHorizontal: 8,
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  registerText: {
+    color: '#666',
+  },
+  registerLink: {
+    marginLeft: 5,
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
