@@ -49,8 +49,8 @@ services:
       DB_CONNECTION: postgresql://user:password@postgres:5432/aitalk
       DATABASE_URL: postgresql://user:password@postgres:5432/aitalk
       OPENAI_API_URL: http://mockserver:8080/openai
-      WHISPER_API_URL: http://mockserver:8080/whisper
-      VOICEVOX_API_URL: http://mockserver:8080/voicevox
+      TRANSCRIBE_API_URL: http://mockserver:8080/transcribe
+      TTS_API_URL: http://mockserver:8080/tts
     volumes:
       - ./backend:/app
       - /app/node_modules

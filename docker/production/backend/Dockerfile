@@ -39,4 +39,4 @@ ENV PORT=3000
 RUN npx prisma migrate deploy
 
 # アプリケーションの起動
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/server.js"]
