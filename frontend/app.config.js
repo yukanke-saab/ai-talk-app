@@ -35,6 +35,8 @@ module.exports = {
     web: {
       favicon: "./assets/favicon.png"
     },
+    // 新しいReact Nativeアーキテクチャの有効化
+    newArchEnabled: true,
     extra: {
       // 環境変数の設定 - プロセス環境変数から読み込む、または既定値を使用
       apiBaseUrl: process.env.EXPO_API_BASE_URL || "http://localhost:3000/api",
