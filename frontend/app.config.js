@@ -38,6 +38,11 @@ module.exports = {
     extra: {
       // 環境変数の設定 - プロセス環境変数から読み込む、または既定値を使用
       apiBaseUrl: process.env.EXPO_API_BASE_URL || "http://localhost:3000/api",
+      // 外部API設定
+      openaiApiUrl: process.env.EXPO_OPENAI_API_URL || "http://localhost:8080/openai",
+      transcribeApiUrl: process.env.EXPO_TRANSCRIBE_API_URL || "http://localhost:8080/transcribe",
+      ttsApiUrl: process.env.EXPO_TTS_API_URL || "http://localhost:8080/tts",
+      // EAS設定
       eas: {
         projectId: "your-project-id"
       }
